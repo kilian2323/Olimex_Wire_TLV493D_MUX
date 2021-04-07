@@ -84,7 +84,7 @@ void TwoWire::beginTransmission(uint8_t address)
 
 /**
 Ends the transmission with a slave device
-Writes the actual send buffer out onto the I2C bus.
+Writes the actual send buffer out onto the I2C bus
 @param {bool} b (unused)
 @returns {int}: 0 in case of success, -1 if there was nothing in the send buffer, 1 if the number of bytes written does not match the number of bytes that should have been written
 Public
@@ -216,6 +216,21 @@ Public
 int TwoWire::available(void)
 {
 	return bufSize - bufIndex;	
+}
+
+/**
+Closes the I2C bus file if it has been opened
+Implemented especially for sanity in Linux,
+but not sure if it is really required
+Public
+**/
+void TwoWire::end(void)
+{
+	if(file != 0)
+	{
+		close(file);
+		printf("TwoWire::end(): Bus closed\n");
+	}
 }
 
 // Preinstantiate Objects //////////////////////////////////////////////////////

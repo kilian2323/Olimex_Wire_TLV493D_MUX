@@ -4,6 +4,9 @@
 #include <cstdint>
 #include <unistd.h>
 #include <string>
+#include <math.h>
+
+#define PI M_PI
 
 using namespace std;
 

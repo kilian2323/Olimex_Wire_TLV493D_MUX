@@ -24,6 +24,7 @@ class TwoWire
 		size_t write(const uint8_t *, ssize_t);
 		uint8_t read(void);// read out buffer byte by byte
 		int available(void);  	
+		void end(void); // added: close the I2C bus file
 	
 	private:
 		int file;
