@@ -1,5 +1,5 @@
 # Olimex_Wire_TLV493D_MUX
-TwoWire and TLV493D library ported from Arduino to Olimex (Linux), with example
+TwoWire and TLV493D library ported from Arduino to Olimex (Linux), with example.
 Created by Kilian Ochs, Centre for Biorobotics, April 2021
 
 ## Purpose
