@@ -15,7 +15,7 @@ The multiplexer TCA9548A which is used for being able to interface more than one
 
 ## Usage
 Connect one sensor TLV493D to channel 0 of the multiplexer TCA9548A. Then connect the multiplexer's main bus to the Olimex I²C interface. Run the output file ./build/Sensor_MUX.
-The program will initialize the sensor, set the channel of the multiplexer and then print the magnetic flux values measured along X, Y and Z. These values can be understood as Cartesian coordinates of the magnet's location.
+The program will initialize the sensor, set the channel of the multiplexer and then print the magnetic flux values measured along X, Y and Z. These values can be understood as Cartesian coordinates of the magnet's location relative to the sensor.
 
 ## Build
 In case a re-compilation becomes necessary, a Makefile is included, so it's enough to just run "make" in the root directory.
