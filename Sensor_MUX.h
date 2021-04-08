@@ -15,6 +15,7 @@ float radToDeg(float);
 void writeTx(unsigned char);
 void printOut();
 bool getInput(char *);
+void testAndReinitialize();
 
 void setup();
 void loop();

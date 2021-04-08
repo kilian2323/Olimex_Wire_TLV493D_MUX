@@ -1,6 +1,8 @@
 /*
 
-Link : https://raw.githubusercontent.com/ramadhinolfski/cpackets/master/conio.h
+Link (original): https://raw.githubusercontent.com/ramadhinolfski/cpackets/master/conio.h
+
+Slightly modified by Kilian Ochs to eliminate most of the "non-return" warnings.
 
 */
 
@@ -236,7 +238,7 @@ class __CONIO_H{
       getch_echo(false);
       }
       
-    int getche(){
+    void getche(){
       getch_echo(true);
       }
       
@@ -293,15 +295,15 @@ class __CONIO_H{
       }
       
     int cputs(const char*str){
-      printf(str);
+      printf("%s",str);
       return 0;
       }
         
-    char*getpass(const char*prompt){
+    void getpass(const char*prompt){
       //implementada en unistd.h
       }
       
-    int gettext(int l,int t,int r,int b,void*destination){
+    void gettext(int l,int t,int r,int b,void*destination){
       
       }
     

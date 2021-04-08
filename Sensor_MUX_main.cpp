@@ -17,7 +17,7 @@
  * This is a ported version of the library made for the  * Adafruit Feather M0
  * (see gitHub: kilian2323/3dMagSensorsVisual).
  */
- 
+
 #include "Sensor_MUX.h"
 #include "./olimex/conio.h"
 
@@ -26,19 +26,22 @@
 #define NUM_SENSORS 2       // Number of sensors per multiplexer (max. 8)
 #define MAXBUF 1000         // Maximum char length of an output message
 
-const unsigned char endSignature[2] = {'\r','\n'};     // for SimuLink: end of message  
+
+
+const bool fastMode = true;		       // [true] if false, the sensor readings come more slowly, but might be more accurate
+
+const unsigned char endSignature[2] = {'\r','\n'};     // for Compressed message format: end of message  
 const bool sendPolarRadius = false;    // [false] if true, the polar radius will be sent as the third value in Spherical mode using Compressed message format,
                                        //         otherwise it will be omitted (only two values will be sent)
 const int multiplier = 100;            // [100] used for Compressed message format. Higher value: better accuracy, but lower range of values to send
 
-const Type t = Cartesian;              // type of representation of sensor data: Cartesian or Spherical
-const MessageFormat mf = PlainText;    // format for serial messages: PlainText or Compressed
+const Type t = Spherical;              // [Cartesian] type of representation of sensor data: Cartesian or Spherical
+const MessageFormat mf = PlainText;    // [PlainText] format for serial messages: PlainText or Compressed
 
 
 
 
 //////////// End of user-defined constants /////////////
-
 
 
 
@@ -49,6 +52,7 @@ unsigned char * txString = new unsigned char[MAXBUF];
 uint8_t txIndex = 0;
 unsigned char encodeResult[2];
 float data[NUM_MUX][NUM_SENSORS][3];
+bool init = true;
 
 using namespace std;
 
@@ -58,7 +62,7 @@ int main()
     setup();
     loop();    
     Wire.end();
-    printf("\n>>>> Good-bye!\n\n");
+    debug("\n>>>> Good-bye!\n\n");
 	return 0;     
 }
 
@@ -67,12 +71,12 @@ int main()
 
 void setup()
 {
-	printf(">>>> RESET\n");
+	debug(">>>> RESET\n");	
 	
-	printf(">>>> Wire.begin(1)\n");
+	debug(">>>> Wire.begin(1)\n");
     Wire.begin((uint8_t)1); // /dev/i2c-1
     
-    printf(">>>> Constructing objects of TLV493D\n");
+    debug(">>>> Constructing objects of TLV493D\n");
 	for(uint8_t m=0; m<NUM_MUX; m++)
 	{
 		for(uint8_t i=0; i<NUM_SENSORS; i++)
@@ -81,20 +85,24 @@ void setup()
 		}
 	}
 	
-	printf(">>>> Initializing sensors TLV493D\n");
+	debug(">>>> Initializing %d sensor(s) TLV493D\n",NUM_SENSORS);
 	for(uint8_t m=MUX_STARTADDR; m<MUX_STARTADDR+NUM_MUX; m++)
 	{
-		printf("     On MUX address %d\n",m);
+		debug("     on MUX address 0x%02X\n",m);
 		muxDisablePrevious(m); 
 
 		for(uint8_t i=0; i<NUM_SENSORS; i++)
 		{
-			delay(10);
 			tcaSelect(m,i);
 			initSensor(m-MUX_STARTADDR,i);			
 		}
-		delay(10);
 	}	
+	testAndReinitialize(); // This is some dirty hack to avoid "badly initialized" (?) sensors in Linux
+	init = false;
+	#ifdef DEBUG
+	debug(">>>> Setup ended. Waiting for some seconds...\n");
+	delay(5000);
+	#endif
 }
 
 void loop()
@@ -104,7 +112,6 @@ void loop()
 		char key = '\0';
 		if(getInput(&key))
 		{
-			printf("Key pressed: %c\n",key);
 			if(key == 'q')
 			{
 				return;
@@ -119,8 +126,8 @@ void loop()
 			
 			for(uint8_t i=0; i<NUM_SENSORS; i++)
 			{ 
-			  // Switch to next multiplexed port  
-			  tcaSelect(m,i);    
+			  // Switch to next multiplexed port  			  
+			  tcaSelect(m,i);   			  
 		  
 			  // Read sensor with selected type of representation
 			  readSensor(m-MUX_STARTADDR,i); 		  
@@ -132,13 +139,67 @@ void loop()
 }
 
 
+void testAndReinitialize()
+{
+	for(uint8_t m=MUX_STARTADDR; m<MUX_STARTADDR+NUM_MUX; m++)
+	{
+		// Deselect all channels of the previous multiplexer    
+		muxDisablePrevious(m);
+		
+		for(uint8_t i=0; i<NUM_SENSORS; i++)
+		{ 
+		  // Switch to next multiplexed port  			  
+		  tcaSelect(m,i);   
+		  debug(">>>> Checking sensor %d.%d\n",m-MUX_STARTADDR,i);
+		  
+		  bool ok = false;	
+		  int attempts = 0;	  
+		  
+		  while(!ok && attempts < 10)
+		  {
+			  debug("     Attempt: %d/10\n",(attempts+1));
+			  int readNum = 0;
+			  while(readNum < 5)
+			  {
+				  debug("       Reading data (%d/5)\n",(readNum+1));
+				  readSensor(m-MUX_STARTADDR,i); 
+				  readNum++;	
+				  if(data[m-MUX_STARTADDR][i][0] != 0 && data[m-MUX_STARTADDR][i][1] != 0 && data[m-MUX_STARTADDR][i][2] != 0)
+				  {
+					  ok = true;
+					  break;
+				  }
+				  if(readNum == 5)
+				  {
+					debug("     Invalid data; reinitializing\n");
+					initSensor(m-MUX_STARTADDR,i);
+				  }		  
+			  }
+			  attempts++;
+		  }		
+		  if(!ok)
+		  {
+			  debug("     Failed to initialize this sensor.\n");
+		  }	 
+		  else
+		  {
+			  debug("     Sensor ok.\n");
+		  } 
+	  		    
+		}    
+	}
+}
+
 
 void tcaSelect(uint8_t m, uint8_t i) 
 {
+  if(init == false && NUM_MUX == 1 && NUM_SENSORS == 1)
+  {
+	  return;
+  }
   Wire.beginTransmission(m);
   Wire.write(1 << i);
   Wire.endTransmission();  
-  delay(5); 
 }
 
 void muxDisablePrevious(uint8_t m)
@@ -170,7 +231,10 @@ void tcaDisable(uint8_t addr)
 void initSensor(uint8_t m, uint8_t i)
 {
   Tlv493dMagnetic3DSensor[m][i]->begin();
-  Tlv493dMagnetic3DSensor[m][i]->setAccessMode(Tlv493dMagnetic3DSensor[m][i]->FASTMODE);
+  if(fastMode)
+  {
+	Tlv493dMagnetic3DSensor[m][i]->setAccessMode(Tlv493dMagnetic3DSensor[m][i]->FASTMODE);
+  }
   Tlv493dMagnetic3DSensor[m][i]->disableTemp();  
 }
 
@@ -254,7 +318,7 @@ void printOut()
     writeTx(endSignature[0]);
     writeTx(endSignature[1]);  
     
-    //Serial.write(txString,txIndex);  TODO: write to Serial port
+    print(txString,txIndex); 
     txIndex = 0;
   }
 }

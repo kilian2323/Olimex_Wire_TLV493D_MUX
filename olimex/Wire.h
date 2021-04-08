@@ -38,7 +38,6 @@ class TwoWire
 		int txBufSize = 0;
 		
 		char busName[NAME_LENGTH];
-		bool busOpen = false;
 };
 extern TwoWire Wire; // declares the variable Wire as an object of class TwoWire
 

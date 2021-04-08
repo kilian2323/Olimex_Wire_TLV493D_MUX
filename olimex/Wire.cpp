@@ -6,6 +6,10 @@
 #include <linux/i2c-dev.h>
 #include <errno.h>
 #include <string.h>
+#include "Olimexino.h"
+
+
+
 
 /** Default constructor **/
 TwoWire::TwoWire() {}
@@ -30,20 +34,20 @@ void TwoWire::begin(void)
 
 void TwoWire::begin(char * _busName)
 {	
-	if(busOpen)
+	if(strcmp(_busName,busName) == 0)
 	{
+		debug("TwoWire::begin(): Bus %s is already open\n",busName);
 		return;
 	}
 	file = open(_busName, O_RDWR);
 	//printf("TwoWire::begin(): Opening I2C bus %s...\n",_busName);
 	if (file < 0) {
 		/* ERROR HANDLING; you can check errno to see what went wrong */
-		printf("TwoWire::begin(): Error opening I2C bus %s.\n",_busName);
+		debug("TwoWire::begin(): Error opening I2C bus %s.\n",_busName);
 		exit(1);
 	}	
 	snprintf(busName, 19, "%s", _busName);
-	//printf("TwoWire::begin(): I2C bus is now open: %s\n",busName);
-	busOpen = true;
+	debug("TwoWire::begin(): I2C bus is now open: %s\n",busName);
 }
 
 /**
@@ -56,7 +60,7 @@ bool TwoWire::selectSlave(uint8_t address)
 {
 	if (ioctl(file, I2C_SLAVE, address) < 0) {
 		/* ERROR HANDLING; you can check errno to see what went wrong */
-		printf("TwoWire::selectSlave(): Error opening slave device.\n");
+		debug("TwoWire::selectSlave(): Error opening slave device.\n");
 		return false;
 	}	
 	slaveAddress = address;
@@ -95,7 +99,7 @@ int TwoWire::endTransmission(bool b)
 	int ret = -1;
 	if(b)
 	{
-		printf("TwoWire::endTransmission(): Warning: Stop condition is not supported.\n");
+		//printf("TwoWire::endTransmission(): Warning: Stop condition is not supported.\n");
 	}
 	
 	if(txBufSize != 0)
@@ -104,11 +108,12 @@ int TwoWire::endTransmission(bool b)
 		ssize_t bytesToSend = (ssize_t)txBufSize;
 		ssize_t bytesWritten = ::write(file, txBuffer, bytesToSend);		
 		if (bytesWritten != bytesToSend) {
-			printf("TwoWire::endTransmission(): Error writing to slave %d: Unexpected number of bytes.\n",slaveAddress);					
-			printf("  bytesToSend: %ld\n  bytesWritten: %ld\n",bytesToSend,bytesWritten);
-			printf("  errno: %s\n",strerror(errno));
+			debug("TwoWire::endTransmission(): Error writing to slave 0x%02X: Unexpected number of bytes.\n",slaveAddress);					
+			debug("  bytesToSend: %ld\n  bytesWritten: %ld\n",bytesToSend,bytesWritten);
+			debug("  errno: %s\n",strerror(errno));
 			ret = 1;
 		}	
+		//delay(100); //// TODO: figure out if delay needed here
 	}
 	txBufSize = 0;
 	txBufIndex = 0;
@@ -168,7 +173,7 @@ uint8_t TwoWire::read(void)
 {
 	if(bufIndex >= bufSize)
 	{
-		printf("TwoWire::read(): Error reading from buffer: index exceeds amount of data currently in buffer.\n");
+		debug("TwoWire::read(): Error reading from buffer: index exceeds amount of data currently in buffer.\n");
 		bufIndex = 0;
 	}	
 	bufIndex++;
@@ -188,7 +193,7 @@ uint8_t TwoWire::requestFrom(uint8_t address, uint8_t quantity)
 	beginTransmission(address);
 	// clamp to buffer length
 	if(quantity > BUFFER_LENGTH){
-		printf("TwoWire::requestFrom(): Error: Too many bytes requested. Please increase BUFFER_LENGTH.\n");
+		debug("TwoWire::requestFrom(): Error: Too many bytes requested. Please increase BUFFER_LENGTH.\n");
 		quantity = BUFFER_LENGTH;
 	}
 	//delay(10);
@@ -196,9 +201,9 @@ uint8_t TwoWire::requestFrom(uint8_t address, uint8_t quantity)
 	int r = ::read(file, buffer, quantity);
 	if(r != quantity)
 	{
-	  printf("TwoWire::requestFrom(): Error reading slave device: Unexpected number of bytes.\n");
-	  printf("  bytes expected: %d\n  bytes read: %d\n",quantity, r);
-	  printf("  errno: %s\n",strerror(errno));
+	  debug("TwoWire::requestFrom(): Error reading slave device: Unexpected number of bytes.\n");
+	  debug("  bytes expected: %d\n  bytes read: %d\n",quantity, r);
+	  debug("  errno: %s\n",strerror(errno));
 	  return 0;
 	}
 	// set new buffer size value
@@ -229,7 +234,7 @@ void TwoWire::end(void)
 	if(file != 0)
 	{
 		close(file);
-		printf("TwoWire::end(): Bus closed\n");
+		debug("TwoWire::end(): Bus closed\n");
 	}
 }
 

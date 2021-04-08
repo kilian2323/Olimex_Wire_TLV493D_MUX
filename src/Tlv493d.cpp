@@ -74,7 +74,6 @@ void Tlv493d::begin(TwoWire &bus, Tlv493d_Address_t slaveAddress, bool reset)
 	{		
 		resetSensor(mInterface.adress);
 	}
-
 	// get all register data from sensor
 	tlv493d::readOut(&mInterface);
 	// copy factory settings to write registers
@@ -284,7 +283,7 @@ float Tlv493d::getPolar(void)
 void Tlv493d::resetSensor(uint8_t adr)     // Recovery & Reset - this can be handled by any uC as it uses bitbanging
 {
 	//printf("  >> Tlv493d::resetSensor(): Setting to address %d\n",adr);
-	mInterface.bus->beginTransmission(0x00);
+	mInterface.bus->beginTransmission((uint8_t)0x00);
 
 	if (adr == TLV493D_ADDRESS1) {
 		// if the sensor shall be initialized with i2c address 0x1F		

@@ -89,14 +89,11 @@ bool tlv493d::writeOut(BusInterface_t *interface, uint8_t count)
 	{
 		count = TLV493D_BUSIF_WRITESIZE;
 	}
-	interface->bus->beginTransmission(interface->adress);
-	
+	interface->bus->beginTransmission(interface->adress);	
 	for(i = 0; i < count; i++)
 	{
 		interface->bus->write(interface->regWriteData[i]);
-	}
-	
-	//interface->bus->write(interface->regWriteData,count);
+	}	
 	if (interface->bus->endTransmission() == 0)
 	{
 		ret = BUS_OK;

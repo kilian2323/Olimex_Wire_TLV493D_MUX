@@ -23,3 +23,11 @@ void print(float f)
 void println(float f)
 {
 }
+
+void print(unsigned char *buf, int size)
+{
+	for(int c = 0; c < size; c++)
+	{
+		printf("%c",buf[c]);
+	}
+}
