@@ -164,7 +164,7 @@ void testAndReinitialize()
 				  debug("       Reading data (%d/5)\n",(readNum+1));
 				  readSensor(m-MUX_STARTADDR,i); 
 				  readNum++;	
-				  if(data[m-MUX_STARTADDR][i][0] != 0 && data[m-MUX_STARTADDR][i][1] != 0 && data[m-MUX_STARTADDR][i][2] != 0)
+				  if(data[m-MUX_STARTADDR][i][0] != 0 || data[m-MUX_STARTADDR][i][1] != 0 || data[m-MUX_STARTADDR][i][2] != 0)
 				  {
 					  ok = true;
 					  break;
