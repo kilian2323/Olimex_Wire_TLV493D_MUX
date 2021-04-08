@@ -14,8 +14,8 @@ The ported library for TLV493D and its utilities are in the "src" folder and its
 The multiplexer TCA9548A which is used for being able to interface more than one (two, actually) sensors TLV493D does not require a driver library and relies only on the "Wire" libraries.
 
 ## Usage
-Connect one sensor TLV493D to channel 0 of the multiplexer TCA9548A. Then connect the multiplexer's main bus to the Olimex I²C interface. Run the output file "./build/Sensor_MUX".
-The program will initialize the sensor, set the channel of the multiplexer and then print the magnetic flux values measured along X, Y and Z. These values can be understood as Cartesian coordinates of the magnet's location relative to the sensor.
+Connect up to eight sensors TLV493D to the channels of each multiplexer TCA9548A. Then connect the multiplexers' main bus to the Olimex I²C interface. Adjust the values "NUM_MUX" and "NUM_SENSORS" in the main code file to match with your configuration. Run "make" in the project root directory. Execute the output file "./build/Sensor_MUX".
+The program will initialize the sensor, set the channel of the multiplexer and then print the magnetic flux values measured along X, Y and Z. These values can be understood as Cartesian coordinates of the magnet's location relative to the sensor. Alternatively, polar angles and radius can be acquired by setting "Type t = Spherical".
 To switch debug messages on, locate the file "config.h" in the "olimex" folder and uncomment the #define DEBUG statement. 
 
 ## Build
