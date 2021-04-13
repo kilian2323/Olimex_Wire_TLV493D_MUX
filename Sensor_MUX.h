@@ -16,6 +16,7 @@ void writeTx(unsigned char);
 void printOut();
 bool getInput(char *);
 void testAndReinitialize();
+bool checkKeyboardInput(void);
 
 void setup();
 void loop();

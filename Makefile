@@ -1,5 +1,5 @@
 CXX = g++
-CXX_FLAGS = -Wfatal-errors -Wall
+CXX_FLAGS = -Wfatal-errors -Wall -std=c++11 -O3 # Note: added -std=c++11 -O3 to make it work on Linux Ubuntu
 
 # Final binary
 BIN = Sensor_MUX

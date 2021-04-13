@@ -13,13 +13,20 @@
  * The format mf = Compressed packs each sensor float value into a 16bit integer. The result is stored in
  * txString, which can be used for data acquisition purposes in the future (send to ROS or via Serial).
  * 
+ * To view debug messages, uncomment the #define in "./olimex/config.h".
+ * To quit, hit "q" on Olimex, and on Linux Ubuntu hit "q" followed by Return key.
+ * 
  * To be compiled for a Linux-based system.
  * This is a ported version of the library made for the  * Adafruit Feather M0
  * (see gitHub: kilian2323/3dMagSensorsVisual).
  */
 
 #include "Sensor_MUX.h"
+#ifndef UBUNTU
 #include "./olimex/conio.h"
+#else
+#include <fcntl.h>
+#endif
 
 #define MUX_STARTADDR 0x70  // [0x70] Address of the first multiplexer; the others must be consecutive
 #define NUM_MUX 1           // Number of multiplexers
@@ -35,7 +42,7 @@ const bool sendPolarRadius = false;    // [false] if true, the polar radius will
                                        //         otherwise it will be omitted (only two values will be sent)
 const int multiplier = 100;            // [100] used for Compressed message format. Higher value: better accuracy, but lower range of values to send
 
-const Type t = Spherical;              // [Cartesian] type of representation of sensor data: Cartesian or Spherical
+const Type t = Cartesian;              // [Cartesian] type of representation of sensor data: Cartesian or Spherical
 const MessageFormat mf = PlainText;    // [PlainText] format for serial messages: PlainText or Compressed
 
 
@@ -74,7 +81,7 @@ void setup()
 	debug(">>>> RESET\n");	
 	
 	debug(">>>> Wire.begin(1)\n");
-    Wire.begin((uint8_t)1); // /dev/i2c-1
+    Wire.begin((uint8_t)8); // /dev/i2c-1
     
     debug(">>>> Constructing objects of TLV493D\n");
 	for(uint8_t m=0; m<NUM_MUX; m++)
@@ -99,25 +106,21 @@ void setup()
 	}	
 	testAndReinitialize(); // This is some dirty hack to avoid "badly initialized" (?) sensors in Linux
 	init = false;
-	#ifdef DEBUG
+#ifdef DEBUG
 	debug(">>>> Setup ended. Waiting for some seconds...\n");
 	delay(5000);
-	#endif
+#endif
 }
 
 void loop()
 {
 	while(true)
-    {    
-		char key = '\0';
-		if(getInput(&key))
-		{
-			if(key == 'q')
-			{
-				return;
-			}
-		}
-		
+  {    
+		// Check if the user entered the quit command
+    if(checkKeyboardInput())
+    {
+      return;
+    }		
 		
 		for(uint8_t m=MUX_STARTADDR; m<MUX_STARTADDR+NUM_MUX; m++)
 		{
@@ -138,6 +141,39 @@ void loop()
 	}
 }
 
+bool checkKeyboardInput(void)
+{
+#ifndef UBUNTU
+  // method for Olimex:
+  char key = '\0';
+	if(getInput(&key))
+	{		
+#ifdef DEBUG
+    debug("Key pressed: %c\n",key);
+    delay(500);
+#endif
+    if(key == 'q')
+    {
+        return true;
+    }
+  }  
+#else
+  char buf[20];
+  fcntl(0, F_SETFL, fcntl(0, F_GETFL) | O_NONBLOCK);
+  int numRead = read(0, buf, 1);
+  if (numRead > 0) {
+#ifdef DEBUG
+    debug("Key pressed: %c\n",buf[0]);
+    delay(500);
+#endif
+    if(buf[0] == 'q')
+    {
+      return true;
+    }
+  }
+#endif
+  return false;
+}
 
 void testAndReinitialize()
 {
@@ -344,6 +380,7 @@ void writeTx(unsigned char c)
   txIndex++;
 }
 
+#ifndef UBUNTU
 bool getInput(char *c)
 {
 	if(kbhit())
@@ -353,4 +390,5 @@ bool getInput(char *c)
 	}
 	return false;
 }
+#endif
 
